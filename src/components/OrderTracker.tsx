@@ -22,35 +22,35 @@ const OrderTracker: React.FC<OrderTrackerProps> = ({ currentStatus }) => {
   const currentStepIndex = steps.findIndex(step => step.name === currentStatus);
 
   return (
-    <Card className="w-full bg-transparent shadow-none border-0">
-      <CardHeader className="px-0 pt-0 pb-4">
-        <CardTitle className="text-base">Order Progress</CardTitle>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Order Progress</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="flex items-start justify-between w-full">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between w-full">
           {steps.map((step, index) => {
             const isCompleted = index < currentStepIndex;
             const isActive = index === currentStepIndex;
 
             return (
               <React.Fragment key={step.name}>
-                <div className="flex flex-col items-center text-center gap-2 w-20">
+                <div className="flex flex-col items-center text-center gap-2">
                   <div
                     className={cn(
                       "flex items-center justify-center w-12 h-12 rounded-full transition-colors duration-300",
-                      isCompleted ? "bg-primary/20 text-primary" :
-                      isActive ? "bg-primary text-primary-foreground animate-pulse" :
-                      "bg-muted text-muted-foreground"
+                      isCompleted ? "bg-green-100 text-green-600" :
+                      isActive ? "bg-blue-100 text-blue-600 animate-pulse" :
+                      "bg-gray-100 text-gray-400"
                     )}
                   >
                     <step.icon className="w-6 h-6" />
                   </div>
                   <p
                     className={cn(
-                      "text-xs sm:text-sm font-medium transition-colors duration-300 h-10",
-                      isCompleted ? "text-foreground" :
-                      isActive ? "text-primary font-semibold" :
-                      "text-muted-foreground"
+                      "text-xs sm:text-sm font-medium transition-colors duration-300",
+                      isCompleted ? "text-green-700" :
+                      isActive ? "text-blue-700" :
+                      "text-gray-500"
                     )}
                   >
                     {step.name}
@@ -61,8 +61,8 @@ const OrderTracker: React.FC<OrderTrackerProps> = ({ currentStatus }) => {
                 {index < steps.length - 1 && (
                   <div
                     className={cn(
-                      "flex-1 h-1 mt-5.5 mx-2 sm:mx-4 rounded",
-                      isCompleted ? "bg-primary" : "bg-muted"
+                      "flex-1 h-1 mx-2 sm:mx-4 rounded",
+                      isCompleted ? "bg-green-500" : "bg-gray-200"
                     )}
                   />
                 )}
