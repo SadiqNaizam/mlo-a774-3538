@@ -1,4 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { toast } from 'sonner';
 
 // Custom Components
 import Header from '@/components/layout/Header';
@@ -12,9 +16,16 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 // Lucide Icons
 import { User, MapPin, CreditCard, Package } from 'lucide-react';
+
+// Zod schema for the profile form
+const profileFormSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  email: z.string().email("Please enter a valid email address."),
+});
 
 // Placeholder data for past orders
 const pastOrders = [
@@ -47,8 +58,40 @@ const pastOrders = [
 const UserProfilePage = () => {
     console.log('UserProfilePage loaded');
 
+    // State for user data, addresses, and payment methods
+    const [user, setUser] = useState({
+        name: "Alex Doe",
+        email: "alex.doe@example.com",
+    });
+
+    const [addresses, setAddresses] = useState([
+        { id: 'addr1', type: 'Home', value: '123 Market St, San Francisco, CA 94103' },
+        { id: 'addr2', type: 'Work', value: '456 Tech Ave, Mountain View, CA 94043' },
+    ]);
+
+    const [paymentMethods, setPaymentMethods] = useState([
+        { id: 'pay1', type: 'Visa', last4: '1234', expiry: '12/2026' }
+    ]);
+
+    const form = useForm<z.infer<typeof profileFormSchema>>({
+        resolver: zodResolver(profileFormSchema),
+        defaultValues: user,
+    });
+
+    function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
+        setUser(values);
+        form.reset(values);
+        toast.success("Profile updated successfully!");
+        console.log("Profile updated:", values);
+    }
+    
+    function handleRemovePayment(id: string) {
+        setPaymentMethods(prev => prev.filter(method => method.id !== id));
+        toast.info("Payment method removed.");
+    }
+
     return (
-        <div className="flex flex-col min-h-screen bg-muted/20">
+        <div className="flex flex-col min-h-screen bg-gray-50/50">
             <Header />
 
             <main className="flex-grow container mx-auto py-8 px-4">
@@ -58,11 +101,11 @@ const UserProfilePage = () => {
                 </div>
 
                 <Tabs defaultValue="orders" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
-                        <TabsTrigger value="orders" className="py-2"><Package className="w-4 h-4 mr-2" />My Orders</TabsTrigger>
-                        <TabsTrigger value="profile" className="py-2"><User className="w-4 h-4 mr-2" />Profile</TabsTrigger>
-                        <TabsTrigger value="addresses" className="py-2"><MapPin className="w-4 h-4 mr-2" />Addresses</TabsTrigger>
-                        <TabsTrigger value="payment" className="py-2"><CreditCard className="w-4 h-4 mr-2" />Payment</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                        <TabsTrigger value="orders"><Package className="w-4 h-4 mr-2" />My Orders</TabsTrigger>
+                        <TabsTrigger value="profile"><User className="w-4 h-4 mr-2" />Profile</TabsTrigger>
+                        <TabsTrigger value="addresses"><MapPin className="w-4 h-4 mr-2" />Addresses</TabsTrigger>
+                        <TabsTrigger value="payment"><CreditCard className="w-4 h-4 mr-2" />Payment</TabsTrigger>
                     </TabsList>
 
                     {/* My Orders Tab */}
@@ -76,17 +119,14 @@ const UserProfilePage = () => {
                                 <Accordion type="single" collapsible className="w-full">
                                     {pastOrders.map((order) => (
                                         <AccordionItem value={order.id} key={order.id}>
-                                            <AccordionTrigger className="hover:no-underline">
-                                                <div className="flex justify-between items-center w-full pr-4 text-sm">
-                                                    <div className="text-left">
-                                                        <p className="font-semibold">Order #{order.id}</p>
-                                                        <p className="text-muted-foreground sm:hidden">{order.date}</p>
-                                                    </div>
+                                            <AccordionTrigger>
+                                                <div className="flex justify-between w-full pr-4 text-sm">
+                                                    <span>Order #{order.id}</span>
                                                     <span className="text-muted-foreground hidden sm:inline">{order.date}</span>
                                                     <span>{order.total}</span>
                                                 </div>
                                             </AccordionTrigger>
-                                            <AccordionContent className="p-4 bg-muted/40">
+                                            <AccordionContent className="p-4 bg-muted/20">
                                                 <div className="mb-4">
                                                     <h4 className="font-semibold">{order.restaurant}</h4>
                                                     <p className="text-sm text-muted-foreground">{order.items.join(', ')}</p>
@@ -94,7 +134,8 @@ const UserProfilePage = () => {
                                                 <OrderTracker currentStatus={order.status} />
                                             </AccordionContent>
                                         </AccordionItem>
-                                    ))}\n                                </Accordion>
+                                    ))}
+                                </Accordion>
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -102,21 +143,45 @@ const UserProfilePage = () => {
                     {/* Profile Tab */}
                     <TabsContent value="profile">
                         <Card>
-                            <CardHeader>
-                                <CardTitle>Profile Information</CardTitle>
-                                <CardDescription>Update your personal details here.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="name">Full Name</Label>
-                                    <Input id="name" defaultValue="Alex Doe" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">Email Address</Label>
-                                    <Input id="email" type="email" defaultValue="alex.doe@example.com" />
-                                </div>
-                                <Button>Save Changes</Button>
-                            </CardContent>
+                             <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onProfileSubmit)}>
+                                    <CardHeader>
+                                        <CardTitle>Profile Information</CardTitle>
+                                        <CardDescription>Update your personal details here.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Full Name</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Your full name" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Email Address</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="email" placeholder="your@email.com" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <Button type="submit" disabled={form.formState.isSubmitting}>
+                                            {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+                                        </Button>
+                                    </CardContent>
+                                </form>
+                            </Form>
                         </Card>
                     </TabsContent>
 
@@ -128,20 +193,15 @@ const UserProfilePage = () => {
                                 <CardDescription>Manage your delivery addresses.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="p-4 border rounded-md flex justify-between items-center">
-                                    <div>
-                                        <p className="font-medium">Home</p>
-                                        <p className="text-sm text-muted-foreground">123 Market St, San Francisco, CA 94103</p>
+                                {addresses.map(address => (
+                                     <div key={address.id} className="p-4 border rounded-md flex justify-between items-center">
+                                        <div>
+                                            <p className="font-medium">{address.type}</p>
+                                            <p className="text-sm text-muted-foreground">{address.value}</p>
+                                        </div>
+                                        <Button variant="outline" size="sm">Edit</Button>
                                     </div>
-                                    <Button variant="outline" size="sm">Edit</Button>
-                                </div>
-                                <div className="p-4 border rounded-md flex justify-between items-center">
-                                    <div>
-                                        <p className="font-medium">Work</p>
-                                        <p className="text-sm text-muted-foreground">456 Tech Ave, Mountain View, CA 94043</p>
-                                    </div>
-                                    <Button variant="outline" size="sm">Edit</Button>
-                                </div>
+                                ))}
                                 <Button>Add New Address</Button>
                             </CardContent>
                         </Card>
@@ -153,18 +213,25 @@ const UserProfilePage = () => {
                             <CardHeader>
                                 <CardTitle>Payment Methods</CardTitle>
                                 <CardDescription>Manage your saved payment options.</CardDescription>
-                            </Header>
+                            </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="p-4 border rounded-md flex justify-between items-center">
-                                    <div className="flex items-center gap-4">
-                                        <CreditCard className="w-8 h-8 text-muted-foreground" />
-                                        <div>
-                                            <p className="font-medium">Visa ending in 1234</p>
-                                            <p className="text-sm text-muted-foreground">Expires 12/2026</p>
+                                {paymentMethods.map(method => (
+                                    <div key={method.id} className="p-4 border rounded-md flex justify-between items-center">
+                                        <div className="flex items-center gap-4">
+                                            <CreditCard className="w-8 h-8 text-muted-foreground" />
+                                            <div>
+                                                <p className="font-medium">{method.type} ending in {method.last4}</p>
+                                                <p className="text-sm text-muted-foreground">Expires {method.expiry}</p>
+                                            </div>
                                         </div>
+                                        <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600" onClick={() => handleRemovePayment(method.id)}>
+                                            Remove
+                                        </Button>
                                     </div>
-                                    <Button variant="destructive" size="sm">Remove</Button>
-                                </div>
+                                ))}
+                                {paymentMethods.length === 0 && (
+                                    <p className="text-sm text-muted-foreground text-center py-4">You have no saved payment methods.</p>
+                                )}
                                 <Button>Add New Payment Method</Button>
                             </CardContent>
                         </Card>
